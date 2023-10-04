@@ -1,10 +1,10 @@
 #include <Adafruit_Soundboard.h>
 
-#define DOOR_RELAY1_PIN       A1
-#define DOOR_RELAY2_PIN       3
-#define LIGHTS_RELAY_PIN  A2
-#define PIR_SENSOR_PIN   A3
-#define BUTTON_PIN       4
+#define DOOR_RELAY1_PIN       12
+#define DOOR_RELAY2_PIN       13
+#define LIGHTS_RELAY_PIN      27
+#define PIR_SENSOR_PIN        A0
+#define BUTTON_PIN            4 // TODO: Update me
 
 #define SFX_RESET_PIN 5
 
