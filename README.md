@@ -18,3 +18,11 @@ Arduino code to control door actuator, lights and sounds. Triggered by PIR (moti
 ### tripwire
 
 ESP32-based device with an attached motion sensor that sends motion events to a local MQTT server
+
+### sneezer
+
+ESP32-based motion activated device that will play a sneeze sound and activate a sprinkler
+
+### coffin
+
+ESP32-based motion activated coffin with motor for skeleton hand waving and sounds

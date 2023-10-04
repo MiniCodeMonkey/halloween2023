@@ -47,6 +47,17 @@ void initSound() {
     while (1);
   }
   Serial.println("SFX board found");
+
+  for (int i = 0; i < 10; i++) {
+    sfx.volUp();
+  }
+}
+
+void waitForSound() {
+  uint32_t current, total;
+  while (sfx.trackTime(&current, &total)) {
+    delaySeconds(1);
+  }
 }
 
 void resetDoorPosition() {
