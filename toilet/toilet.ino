@@ -33,6 +33,9 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
   
+  //openDoor();
+  //delay(DOOR_MOVE_TIME_MS);
+  //delay(9999999);
   resetDoorPosition();
 }
 
@@ -68,7 +71,7 @@ void loop() {
     delay(2000);
     lightsOn();
     sfx.playTrack(2);
-    delay(5000);
+    delay(20000);
 
     lightsOff();
     closeDoor();
