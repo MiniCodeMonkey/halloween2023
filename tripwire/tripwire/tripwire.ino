@@ -42,8 +42,6 @@ void initMQTT()
   client.enableLastWillMessage("TestClient/lastwill", "I am going offline");
 }
 
-// This function is called once everything is connected (Wifi and MQTT)
-// WARNING : YOU MUST IMPLEMENT IT IF YOU USE EspMQTTClient
 void onConnectionEstablished()
 {
   connected = true;
