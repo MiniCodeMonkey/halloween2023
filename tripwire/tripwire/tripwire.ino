@@ -1,12 +1,12 @@
 #include <ESP32HTTPUpdateServer.h>
 #include <EspMQTTClient.h>
 
-#define PIR_SENSOR_PIN   A3
+#define PIR_SENSOR_PIN   12
 
 EspMQTTClient client(
   "Halloween",
   "veryspooky",
-  "192.168.1.100",  // MQTT Broker server ip
+  "192.168.1.15",
   "",
   "",
   "TestClient",     // Client name that uniquely identify your device
@@ -58,7 +58,8 @@ void loop() {
       Serial.println("Motion detected.");
       lastTriggerTime = millis();
 
-      client.publish("tripwire/" + String(chipId), "trigger"); 
+      client.publish("tripwire/" + String(chipId), "trigger");
+      delay(10000);
     }
   } else {
     Serial.println("Not connected yet...");
