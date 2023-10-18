@@ -1,4 +1,3 @@
-#include <Adafruit_Soundboard.h>
 #include <ArduinoOTA.h>
 #include <TelnetStream.h>
 
@@ -6,26 +5,20 @@
 #define DOOR_RELAY2_PIN       13
 #define LIGHTS_RELAY_PIN      27
 #define PIR_SENSOR_PIN        A0
-#define BUTTON_PIN            4 // TODO: Update me
-
-#define SFX_RESET_PIN 21
+#define FOG_RELAY_PIN         14
 
 #define DOOR_MOVE_TIME_MS 16000
 
-#define DEVICE_NAME "toilet"
+#define DEVICE_NAME "jackinthebox"
 #define WIFI_CONNECT_TIMEOUT_MS 15000
 
 WiFiClient client;
-
-Adafruit_Soundboard sfx = Adafruit_Soundboard(&Serial1, NULL, SFX_RESET_PIN);
 
 unsigned long lastTriggerTime;
 
 int pirValue;
 
 void setup() {  
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  
   pinMode(DOOR_RELAY1_PIN, OUTPUT);
   digitalWrite(DOOR_RELAY1_PIN, LOW);
 
@@ -35,6 +28,9 @@ void setup() {
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
 
+  pinMode(FOG_RELAY_PIN, OUTPUT);
+  digitalWrite(FOG_RELAY_PIN, LOW);
+
   pinMode(PIR_SENSOR_PIN, INPUT);
   
   Serial.begin(115200);
@@ -43,7 +39,6 @@ void setup() {
   initWiFi();
   
   resetDoorPosition();
-  initSound();
 }
 
 void initWiFi() {
@@ -70,29 +65,6 @@ void initWiFi() {
   }
 }
 
-void initSound() {
-  Serial1.begin(9600);
-
-  if (!sfx.reset()) {
-    Serial.println("Waiting for SFX board");
-    while (1);
-  }
-  Serial.println("SFX board found");
-
-  for (int i = 0; i < 10; i++) {
-    sfx.volUp();
-  }
-
-  sfx.playTrack("T10     WAV");
-}
-
-void waitForSound() {
-  uint32_t current, total;
-  while (sfx.trackTime(&current, &total)) {
-    delay(1000);
-  }
-}
-
 void resetDoorPosition() {
   Serial.println("Resetting door position");  
   closeDoor();
@@ -103,7 +75,6 @@ void resetDoorPosition() {
 
 void loop() {
   ArduinoOTA.handle();
-  checkIfButtonPressed();
   
   pirValue = digitalRead(PIR_SENSOR_PIN);
   if (pirValue == HIGH) {
@@ -111,27 +82,15 @@ void loop() {
     TelnetStream.println("Motion detected.");
     lastTriggerTime = millis();
 
-    Serial.println("Playing sounds");
-    sfx.playTrack("T08     WAV");
-    delay(1000);
     openDoor();
-    delay(500);
-    sfx.playTrack("T09     WAV");
     lightsOn();
-    delay(2000);
-    sfx.playTrack("T10     WAV");
-    delay(3000);
-    stopDoor();
-    delay(1000);
-    sfx.playTrack("T01     WAV");
-
-
-    delay(7000);
-
-    lightsOff();
-    closeDoor();
+    fogOn();
     delay(DOOR_MOVE_TIME_MS);
     stopDoor();
+    fogOff();
+    delay(5000);
+    lightsOff();
+    closeDoor();
 
     delay(10000);
   }
@@ -167,25 +126,12 @@ void lightsOff() {
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
 }
 
-void checkIfButtonPressed() {
-  int buttonVal = digitalRead(BUTTON_PIN);
+void fogOn() {
+  Serial.println("Fog on");
+  digitalWrite(FOG_RELAY_PIN, HIGH);
+}
 
-  if (buttonVal == LOW) {
-    Serial.println("Button pressed! Opening door");
-    openDoor();
-    delay(DOOR_MOVE_TIME_MS);
-    stopDoor();
-
-    do {
-      buttonVal = digitalRead(BUTTON_PIN);
-      Serial.println("Waiting for button to be pressed again");
-      delay(1000);
-    }
-    while (buttonVal == HIGH);
-
-    Serial.println("Closing door");
-    closeDoor();
-    delay(DOOR_MOVE_TIME_MS);
-    stopDoor();
-  }
+void fogOff() {
+  Serial.println("Fog off");
+  digitalWrite(FOG_RELAY_PIN, LOW);
 }
