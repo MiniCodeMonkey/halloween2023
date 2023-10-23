@@ -1,13 +1,12 @@
 #include <ArduinoOTA.h>
 #include <TelnetStream.h>
 
-#define DOOR_RELAY1_PIN       12
-#define DOOR_RELAY2_PIN       13
-#define LIGHTS_RELAY_PIN      27
+#define DOOR_RELAY1_PIN       32
+#define DOOR_RELAY2_PIN       14
+#define FOG_RELAY_PIN         33
 #define PIR_SENSOR_PIN        A0
-#define FOG_RELAY_PIN         14
 
-#define DOOR_MOVE_TIME_MS 16000
+#define DOOR_MOVE_TIME_MS 19000
 
 #define DEVICE_NAME "jackinthebox"
 #define WIFI_CONNECT_TIMEOUT_MS 15000
@@ -20,16 +19,13 @@ int pirValue;
 
 void setup() {  
   pinMode(DOOR_RELAY1_PIN, OUTPUT);
-  digitalWrite(DOOR_RELAY1_PIN, LOW);
+  digitalWrite(DOOR_RELAY1_PIN, HIGH);
 
   pinMode(DOOR_RELAY2_PIN, OUTPUT);
-  digitalWrite(DOOR_RELAY2_PIN, LOW);
-
-  pinMode(LIGHTS_RELAY_PIN, OUTPUT);
-  digitalWrite(LIGHTS_RELAY_PIN, LOW);
+  digitalWrite(DOOR_RELAY2_PIN, HIGH);
 
   pinMode(FOG_RELAY_PIN, OUTPUT);
-  digitalWrite(FOG_RELAY_PIN, LOW);
+  digitalWrite(FOG_RELAY_PIN, HIGH);
 
   pinMode(PIR_SENSOR_PIN, INPUT);
   
@@ -37,7 +33,6 @@ void setup() {
   while (!Serial);
 
   initWiFi();
-  
   resetDoorPosition();
 }
 
@@ -67,6 +62,8 @@ void initWiFi() {
 
 void resetDoorPosition() {
   Serial.println("Resetting door position");  
+  openDoor();
+  delay(DOOR_MOVE_TIME_MS);
   closeDoor();
   delay(DOOR_MOVE_TIME_MS);
   stopDoor();
@@ -83,16 +80,21 @@ void loop() {
     lastTriggerTime = millis();
 
     openDoor();
-    lightsOn();
+    //lightsOn();
     fogOn();
+    delay(9500);
+    fogOff();
+    delay(9500);
+    stopDoor();
+    delay(10000);
+    //lightsOff();
+    closeDoor();
     delay(DOOR_MOVE_TIME_MS);
     stopDoor();
-    fogOff();
-    delay(5000);
-    lightsOff();
-    closeDoor();
 
-    delay(10000);
+    ArduinoOTA.handle();
+
+    delay(30000);
   }
    
   delay(100);
@@ -112,26 +114,16 @@ void closeDoor() {
 
 void stopDoor() {
   Serial.println("Stopping door");
-  digitalWrite(DOOR_RELAY1_PIN, LOW);  
-  digitalWrite(DOOR_RELAY2_PIN, LOW);
-}
-
-void lightsOn() {
-  Serial.println("Lights on");
-  digitalWrite(LIGHTS_RELAY_PIN, HIGH);
-}
-
-void lightsOff() {
-  Serial.println("Lights off");
-  digitalWrite(LIGHTS_RELAY_PIN, LOW);
+  digitalWrite(DOOR_RELAY1_PIN, HIGH);  
+  digitalWrite(DOOR_RELAY2_PIN, HIGH);
 }
 
 void fogOn() {
   Serial.println("Fog on");
-  digitalWrite(FOG_RELAY_PIN, HIGH);
+  digitalWrite(FOG_RELAY_PIN, LOW);
 }
 
 void fogOff() {
   Serial.println("Fog off");
-  digitalWrite(FOG_RELAY_PIN, LOW);
+  digitalWrite(FOG_RELAY_PIN, HIGH);
 }
