@@ -6,7 +6,6 @@
 #define DOOR_RELAY2_PIN       13
 #define LIGHTS_RELAY_PIN      27
 #define PIR_SENSOR_PIN        A0
-#define BUTTON_PIN            4 // TODO: Update me
 
 #define SFX_RESET_PIN 21
 
@@ -19,13 +18,9 @@ WiFiClient client;
 
 Adafruit_Soundboard sfx = Adafruit_Soundboard(&Serial1, NULL, SFX_RESET_PIN);
 
-unsigned long lastTriggerTime;
-
 int pirValue;
 
 void setup() {  
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  
   pinMode(DOOR_RELAY1_PIN, OUTPUT);
   digitalWrite(DOOR_RELAY1_PIN, LOW);
 
@@ -44,6 +39,8 @@ void setup() {
   
   resetDoorPosition();
   initSound();
+
+  randomSeed(analogRead(A1));
 }
 
 void initWiFi() {
@@ -103,15 +100,12 @@ void resetDoorPosition() {
 
 void loop() {
   ArduinoOTA.handle();
-  checkIfButtonPressed();
   
   pirValue = digitalRead(PIR_SENSOR_PIN);
   if (pirValue == HIGH) {
     Serial.println("Motion detected.");
     TelnetStream.println("Motion detected.");
-    lastTriggerTime = millis();
 
-    Serial.println("Playing sounds");
     sfx.playTrack("T08     WAV");
     delay(1000);
     openDoor();
@@ -123,7 +117,14 @@ void loop() {
     delay(3000);
     stopDoor();
     delay(1000);
-    sfx.playTrack("T01     WAV");
+    
+    char trackName[50];
+    long trackNumber = random(0, 3);
+    sprintf(trackName, "T0%d     WAV", trackNumber);
+    Serial.print("Playing");
+    Serial.println(trackName);
+    sfx.playTrack(trackName);
+    waitForSound();
 
 
     delay(7000);
@@ -133,10 +134,17 @@ void loop() {
     delay(DOOR_MOVE_TIME_MS);
     stopDoor();
 
-    delay(10000);
+    nextTriggerDelay();
   }
    
   delay(100);
+}
+
+void nextTriggerDelay() {
+  for (int i = 1; i < 30; i++) {
+    delay(1000);
+    ArduinoOTA.handle();
+  }
 }
 
 void openDoor() {
@@ -165,27 +173,4 @@ void lightsOn() {
 void lightsOff() {
   Serial.println("Lights off");
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
-}
-
-void checkIfButtonPressed() {
-  int buttonVal = digitalRead(BUTTON_PIN);
-
-  if (buttonVal == LOW) {
-    Serial.println("Button pressed! Opening door");
-    openDoor();
-    delay(DOOR_MOVE_TIME_MS);
-    stopDoor();
-
-    do {
-      buttonVal = digitalRead(BUTTON_PIN);
-      Serial.println("Waiting for button to be pressed again");
-      delay(1000);
-    }
-    while (buttonVal == HIGH);
-
-    Serial.println("Closing door");
-    closeDoor();
-    delay(DOOR_MOVE_TIME_MS);
-    stopDoor();
-  }
 }
