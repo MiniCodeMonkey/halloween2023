@@ -2,14 +2,14 @@
 #include <ArduinoOTA.h>
 #include <TelnetStream.h>
 
-#define DOOR_RELAY1_PIN       12
-#define DOOR_RELAY2_PIN       13
+#define DOOR_RELAY1_PIN       32
+#define DOOR_RELAY2_PIN       14
 #define LIGHTS_RELAY_PIN      27
 #define PIR_SENSOR_PIN        A0
 
 #define SFX_RESET_PIN 21
 
-#define DOOR_MOVE_TIME_MS 16000
+#define DOOR_MOVE_TIME_MS 18000
 
 #define DEVICE_NAME "toilet"
 #define WIFI_CONNECT_TIMEOUT_MS 15000
@@ -22,10 +22,10 @@ int pirValue;
 
 void setup() {  
   pinMode(DOOR_RELAY1_PIN, OUTPUT);
-  digitalWrite(DOOR_RELAY1_PIN, LOW);
+  digitalWrite(DOOR_RELAY1_PIN, HIGH);
 
   pinMode(DOOR_RELAY2_PIN, OUTPUT);
-  digitalWrite(DOOR_RELAY2_PIN, LOW);
+  digitalWrite(DOOR_RELAY2_PIN, HIGH);
 
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
@@ -34,13 +34,15 @@ void setup() {
   
   Serial.begin(115200);
   while (!Serial);
-
+  
   initWiFi();
+  initSound();
   
   resetDoorPosition();
-  initSound();
 
-  randomSeed(analogRead(A1));
+  randomSeed(analogRead(A2));
+
+  TelnetStream.println("Ready for action!");
 }
 
 void initWiFi() {
@@ -70,17 +72,19 @@ void initWiFi() {
 void initSound() {
   Serial1.begin(9600);
 
-  if (!sfx.reset()) {
+  while (!sfx.reset()) {
     Serial.println("Waiting for SFX board");
-    while (1);
+    TelnetStream.println("Waiting for SFX board");
+    delay(1000);
   }
   Serial.println("SFX board found");
+  TelnetStream.println("SFX board found");
 
   for (int i = 0; i < 10; i++) {
     sfx.volUp();
   }
 
-  sfx.playTrack("T10     WAV");
+  sfx.playTrack(10);
 }
 
 void waitForSound() {
@@ -91,11 +95,18 @@ void waitForSound() {
 }
 
 void resetDoorPosition() {
-  Serial.println("Resetting door position");  
+  Serial.println("Resetting door position");
+  TelnetStream.println("Resetting door position");
+  openDoor();
+  delay(DOOR_MOVE_TIME_MS);
+  stopDoor();
+  delay(1000);
   closeDoor();
+  delay(DOOR_MOVE_TIME_MS);
   delay(DOOR_MOVE_TIME_MS);
   stopDoor();
   Serial.println("Door is closed");
+  TelnetStream.println("Door is closed");
 }
 
 void loop() {
@@ -106,26 +117,26 @@ void loop() {
     Serial.println("Motion detected.");
     TelnetStream.println("Motion detected.");
 
-    sfx.playTrack("T08     WAV");
+    sfx.playTrack(8);
     delay(1000);
     openDoor();
     delay(500);
-    sfx.playTrack("T09     WAV");
+    sfx.playTrack(9);
     lightsOn();
     delay(2000);
-    sfx.playTrack("T10     WAV");
+    sfx.playTrack(10);
     delay(3000);
     stopDoor();
     delay(1000);
     
-    char trackName[50];
     long trackNumber = random(0, 3);
-    sprintf(trackName, "T0%d     WAV", trackNumber);
     Serial.print("Playing");
-    Serial.println(trackName);
-    sfx.playTrack(trackName);
-    waitForSound();
+    Serial.println(trackNumber);
+    TelnetStream.print("Playing");
+    TelnetStream.println(trackNumber);
 
+    sfx.playTrack(trackNumber);
+    waitForSound();
 
     delay(7000);
 
@@ -134,7 +145,11 @@ void loop() {
     delay(DOOR_MOVE_TIME_MS);
     stopDoor();
 
+    TelnetStream.println("Delaying next trigger");
+
     nextTriggerDelay();
+
+    TelnetStream.println("Ready for motion");
   }
    
   delay(100);
@@ -161,8 +176,8 @@ void closeDoor() {
 
 void stopDoor() {
   Serial.println("Stopping door");
-  digitalWrite(DOOR_RELAY1_PIN, LOW);  
-  digitalWrite(DOOR_RELAY2_PIN, LOW);
+  digitalWrite(DOOR_RELAY1_PIN, HIGH);  
+  digitalWrite(DOOR_RELAY2_PIN, HIGH);
 }
 
 void lightsOn() {
