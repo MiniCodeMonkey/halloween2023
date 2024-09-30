@@ -3,7 +3,7 @@
 #include <TelnetStream.h>
 
 #define PUMP_RELAY_PIN      27
-#define SFX_RESET_PIN       21
+#define SFX_RESET_PIN 21
 
 #define DOOR_MOVE_TIME_MS 16000
 
@@ -14,11 +14,9 @@ WiFiClient client;
 
 Adafruit_Soundboard sfx = Adafruit_Soundboard(&Serial1, NULL, SFX_RESET_PIN);
 
-int pirValue;
-
 void setup() {  
   pinMode(PUMP_RELAY_PIN, OUTPUT);
-  digitalWrite(PUMP_RELAY_PIN, LOW);
+  pumpOff();
   
   Serial.begin(115200);
   while (!Serial);
@@ -26,7 +24,7 @@ void setup() {
   initWiFi();
   initSound();
 
-  randomSeed(analogRead(A1));
+  randomSeed(analogRead(A2));
 }
 
 void initWiFi() {
@@ -56,17 +54,28 @@ void initWiFi() {
 void initSound() {
   Serial1.begin(9600);
 
-  if (!sfx.reset()) {
+  while (!sfx.reset()) {
     Serial.println("Waiting for SFX board");
-    while (1);
+    TelnetStream.println("Waiting for SFX board");
+    delay(1000);
   }
   Serial.println("SFX board found");
+  TelnetStream.println("SFX board found");
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 100; i++) {
     sfx.volUp();
   }
+}
 
-  sfx.playTrack("T00     WAV");
+void playSound() {
+  long trackNumber = random(0, 4);
+  char trackName[20];
+  sprintf(trackName, "T0%d     WAV", trackNumber);
+
+  Serial.print("Playing");
+  Serial.println(trackName);
+
+  sfx.playTrack(trackName);
 }
 
 void waitForSound() {
@@ -79,12 +88,7 @@ void waitForSound() {
 void loop() {
   ArduinoOTA.handle();
   
-  char trackName[50];
-  long trackNumber = random(0, 4);
-  sprintf(trackName, "T0%d     WAV", trackNumber);
-  Serial.print("Playing");
-  Serial.println(trackName);
-  sfx.playTrack(trackName);
+  playSound();
   waitForSound();
 
   pumpOn();
@@ -95,6 +99,7 @@ void loop() {
 }
 
 void nextTriggerDelay() {
+  Serial.println("Next trigger delay");
   for (int i = 1; i < 30; i++) {
     delay(1000);
     ArduinoOTA.handle();
@@ -103,10 +108,10 @@ void nextTriggerDelay() {
 
 void pumpOn() {
   Serial.println("Pump on");
-  digitalWrite(PUMP_RELAY_PIN, HIGH);
+  digitalWrite(PUMP_RELAY_PIN, LOW);
 }
 
 void pumpOff() {
   Serial.println("Pump off");
-  digitalWrite(PUMP_RELAY_PIN, LOW);
+  digitalWrite(PUMP_RELAY_PIN, HIGH);
 }
